@@ -15,6 +15,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup VSBT environment
+        shell: pwsh
+        run: |
+          Write-Host "=== Setting up VSBT Environment ===" -ForegroundColor Green
+          & "$env:GITHUB_WORKSPACE\.github\workflows\Add-VSBT-Env-x64.ps1"
+
       - name: System information
         shell: pwsh
         run: |
@@ -85,6 +91,24 @@ jobs:
             Write-Host "cl.exe not found in PATH"
           }
 
+          # VSBT 環境変数の確認
+          Write-Host "`n=== VSBT Environment Variables ===" -ForegroundColor Green
+          Write-Host "VCToolsVersion: $env:VCToolsVersion"
+          Write-Host "VCToolsInstallDir: $env:VCToolsInstallDir"
+          Write-Host "WindowsSDKVersion: $env:WindowsSDKVersion"
+          Write-Host "WindowsSdkBinPath: $env:WindowsSdkBinPath"
+
+          # MSVC 14.44.35207 の確認
+          Write-Host "`n=== MSVC 14.44.35207 Check ===" -ForegroundColor Green
+          $msvcPath = "$env:VCToolsInstallDir\bin\Hostx64\x64"
+          if (Test-Path $msvcPath) {
+            Write-Host "MSVC 14.44.35207 path exists: $msvcPath"
+            Write-Host "Binaries (first 10):"
+            Get-ChildItem $msvcPath -File | Select-Object -First 10 | ForEach-Object { Write-Host "  $($_.Name)" }
+          } else {
+            Write-Host "MSVC 14.44.35207 path not found: $msvcPath"
+          }
+
       - name: Windows SDK check
         shell: pwsh
         run: |
@@ -114,6 +138,36 @@ jobs:
             }
           } else {
             Write-Host "Windows SDK not found at $sdkRoot"
+          }
+
+          # Windows SDK 10.0.26100.0 の確認
+          Write-Host "`n=== Windows SDK 10.0.26100.0 Check ===" -ForegroundColor Green
+          $sdk26100Bin = "${env:ProgramFiles(x86)}\Windows Kits\10\bin\10.0.26100.0\x64"
+          $sdk26100Include = "${env:ProgramFiles(x86)}\Windows Kits\10\Include\10.0.26100.0"
+          $sdk26100Lib = "${env:ProgramFiles(x86)}\Windows Kits\10\Lib\10.0.26100.0"
+
+          if (Test-Path $sdk26100Bin) {
+            Write-Host "SDK 10.0.26100.0 bin exists: $sdk26100Bin"
+            Write-Host "Binaries (first 10):"
+            Get-ChildItem $sdk26100Bin -File | Select-Object -First 10 | ForEach-Object { Write-Host "  $($_.Name)" }
+          } else {
+            Write-Host "SDK 10.0.26100.0 bin not found: $sdk26100Bin"
+          }
+
+          if (Test-Path $sdk26100Include) {
+            Write-Host "`nSDK 10.0.26100.0 include exists: $sdk26100Include"
+            Write-Host "Include directories:"
+            Get-ChildItem $sdk26100Include -Directory | ForEach-Object { Write-Host "  $($_.Name)" }
+          } else {
+            Write-Host "`nSDK 10.0.26100.0 include not found: $sdk26100Include"
+          }
+
+          if (Test-Path $sdk26100Lib) {
+            Write-Host "`nSDK 10.0.26100.0 lib exists: $sdk26100Lib"
+            Write-Host "Lib directories:"
+            Get-ChildItem $sdk26100Lib -Directory | ForEach-Object { Write-Host "  $($_.Name)" }
+          } else {
+            Write-Host "`nSDK 10.0.26100.0 lib not found: $sdk26100Lib"
           }
 
       - name: Installed programs check

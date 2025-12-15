@@ -147,7 +147,16 @@ VSBT 環境設定スクリプトをテストするワークフローを作成し
 
 ### env-diagnostics.yml の修正
 
-Chocolatey の `--local-only` オプションが廃止されたため、`choco --version` に変更してエラーを回避しました。
+以下の修正を実施しました:
+
+1. Chocolatey の `--local-only` オプションが廃止されたため、`choco --version` に変更してエラーを回避
+2. 先頭に `Add-VSBT-Env-x64.ps1` の呼び出しを追加
+3. Visual Studio と MSVC チェックに以下を追加:
+   - VSBT 環境変数の確認 (VCToolsVersion, VCToolsInstallDir, WindowsSDKVersion など)
+   - MSVC 14.44.35207 の存在確認とバイナリ一覧表示
+4. Windows SDK チェックに以下を追加:
+   - SDK 10.0.26100.0 の bin/include/lib の存在確認
+   - 各ディレクトリの内容表示
 
 ## 次のステップ
 
