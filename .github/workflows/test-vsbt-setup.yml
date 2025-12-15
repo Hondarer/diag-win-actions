@@ -1,0 +1,111 @@
+name: Test VSBT Environment Setup
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test-vsbt-setup:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run VSBT environment setup script
+        shell: pwsh
+        run: |
+          Write-Host "=== Running VSBT Environment Setup ===" -ForegroundColor Green
+          & "$env:GITHUB_WORKSPACE\.github\workflows\Add-VSBT-Env-x64.ps1"
+
+      - name: Verify MSVC compiler
+        shell: pwsh
+        run: |
+          Write-Host "=== Verifying MSVC Compiler ===" -ForegroundColor Green
+
+          $clPath = Get-Command cl.exe -ErrorAction SilentlyContinue
+          if ($clPath) {
+            Write-Host "cl.exe found: $($clPath.Source)"
+            Write-Host "`nCompiler version:"
+            cl.exe 2>&1 | Select-Object -First 10
+          } else {
+            Write-Host "Error: cl.exe not found in PATH"
+            exit 1
+          }
+
+      - name: Verify environment variables
+        shell: pwsh
+        run: |
+          Write-Host "=== Verifying Environment Variables ===" -ForegroundColor Green
+
+          Write-Host "VSCMD_ARG_HOST_ARCH: $env:VSCMD_ARG_HOST_ARCH"
+          Write-Host "VSCMD_ARG_TGT_ARCH: $env:VSCMD_ARG_TGT_ARCH"
+          Write-Host "VCToolsVersion: $env:VCToolsVersion"
+          Write-Host "WindowsSDKVersion: $env:WindowsSDKVersion"
+          Write-Host "VCToolsInstallDir: $env:VCToolsInstallDir"
+          Write-Host "WindowsSdkBinPath: $env:WindowsSdkBinPath"
+
+          Write-Host "`n=== INCLUDE paths ===" -ForegroundColor Green
+          $env:INCLUDE -split ';' | ForEach-Object { Write-Host "  $_" }
+
+          Write-Host "`n=== LIB paths ===" -ForegroundColor Green
+          $env:LIB -split ';' | ForEach-Object { Write-Host "  $_" }
+
+      - name: Test compile simple C program
+        shell: pwsh
+        run: |
+          Write-Host "=== Testing C Compilation ===" -ForegroundColor Green
+
+          $testCode = @"
+          #include <stdio.h>
+
+          int main() {
+              printf("Hello from MSVC!\n");
+              return 0;
+          }
+          "@
+
+          Set-Content -Path "test.c" -Value $testCode
+
+          Write-Host "Compiling test.c..."
+          cl.exe /nologo test.c
+
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "`nCompilation successful!"
+            Write-Host "`nRunning test.exe..."
+            .\test.exe
+          } else {
+            Write-Host "Compilation failed!"
+            exit 1
+          }
+
+      - name: Test compile simple C++ program
+        shell: pwsh
+        run: |
+          Write-Host "=== Testing C++ Compilation ===" -ForegroundColor Green
+
+          $testCode = @"
+          #include <iostream>
+
+          int main() {
+              std::cout << "Hello from MSVC C++!" << std::endl;
+              return 0;
+          }
+          "@
+
+          Set-Content -Path "test.cpp" -Value $testCode
+
+          Write-Host "Compiling test.cpp..."
+          cl.exe /nologo /EHsc test.cpp
+
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "`nCompilation successful!"
+            Write-Host "`nRunning test.exe..."
+            .\test.exe
+          } else {
+            Write-Host "Compilation failed!"
+            exit 1
+          }

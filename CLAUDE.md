@@ -43,8 +43,113 @@ Windows Runner の環境調査用ワークフローです。以下の情報を�
 - main ブランチへの pull request
 - 手動実行 (workflow_dispatch)
 
+## GitHub Actions Windows Runner 環境調査結果
+
+ワークフロー実行結果 (Run ID: 20249876191)
+
+### 基本環境
+
+- OS: Microsoft Windows Server 2025 (10.0.26100)
+- Runner: windows-2025 (Image Version: 20251208.136.1)
+- PowerShell: 7.x
+- ワークスペース: `D:\a\diag-win-actions\diag-win-actions`
+
+### Git と MinGW
+
+- Git バージョン: 2.52.0.windows.1
+- Git インストールパス: `C:\Program Files\Git`
+- MinGW パス: `C:\Program Files\Git\mingw64\bin` (存在確認済み)
+- usr/bin パス: `C:\Program Files\Git\usr\bin` (存在確認済み)
+- PATH に既に含まれている:
+  - `C:\Program Files\Git\cmd`
+  - `C:\Program Files\Git\mingw64\bin`
+  - `C:\Program Files\Git\usr\bin`
+
+### Visual Studio と MSVC
+
+- Visual Studio 2022 Enterprise (バージョン 17.14.36717.8)
+- インストールパス: `C:\Program Files\Microsoft Visual Studio\2022\Enterprise`
+- **重要**: `cl.exe` は PATH に含まれていない (デフォルトでは利用不可)
+- MSVC を使用するには Developer Command Prompt または vcvarsall.bat の実行が必要
+
+### Windows SDK
+
+- SDK ルート: `C:\Program Files (x86)\Windows Kits\10`
+- 利用可能な SDK バージョン:
+  - Include/Lib: 10.0.10240.0, 10.0.26100.0
+  - Bin: 10.0.14393.0, 10.0.15063.0, 10.0.16299.0, 10.0.17134.0, 10.0.26100.0
+- アーキテクチャ: arm, arm64, x64, x86
+
+### 開発ツール
+
+PATH に含まれている開発ツール:
+
+- cmake: `C:\Program Files\CMake\bin\cmake.exe`
+- ninja: `C:\ProgramData\Chocolatey\bin\ninja.exe`
+- make: `C:\mingw64\bin\make.exe`
+- gcc: `C:\mingw64\bin\gcc.exe`
+- g++: `C:\mingw64\bin\g++.exe`
+- clang: `C:\Program Files\LLVM\bin\clang.exe`
+
+注: `C:\mingw64` は Git とは別の MinGW インストール
+
+## スクリプト修正方針
+
+### Add-MinGW-Path スクリプト
+
+GitHub Actions 環境では、Git MinGW は既に PATH に含まれているため、スクリプトの修正が必要:
+
+1. ローカル環境: スクリプトと同じディレクトリの `git\mingw64\bin` を参照
+2. GitHub Actions 環境: `C:\Program Files\Git\mingw64\bin` を参照
+
+対応策:
+
+- 環境変数 `GITHUB_ACTIONS` の有無で動作を切り替える
+- GitHub Actions 環境では既に PATH に含まれているため、何もしないか確認のみ
+
+### Add-VSBT-Env スクリプト
+
+GitHub Actions 環境では、Visual Studio は別の場所にインストールされているため、パスの修正が必要:
+
+1. ローカル環境: スクリプトと同じディレクトリの `vsbt` を参照
+2. GitHub Actions 環境: `C:\Program Files\Microsoft Visual Studio\2022\Enterprise` を参照
+
+対応策:
+
+- 環境変数 `GITHUB_ACTIONS` の有無で動作を切り替える
+- vswhere.exe を使用して Visual Studio のインストールパスを動的に取得
+- MSVC のバージョン番号もハードコードせず、動的に検出
+
+## 実装内容
+
+### .github/workflows/Add-VSBT-Env-x64.ps1
+
+GitHub Actions 専用の VSBT 環境設定スクリプトを作成しました。
+
+主な変更点:
+
+- L5-7: `vswhere.exe` を使用して Visual Studio のインストールパスを動的取得
+- Windows SDK は `${env:ProgramFiles(x86)}\Windows Kits\10` から直接参照
+- MSVC と Windows SDK の両方で存在確認を実施 (見つからない場合はエラー終了)
+- バージョン固定: MSVC 14.44.35207、Windows SDK 10.0.26100.0
+
+### .github/workflows/test-vsbt-setup.yml
+
+VSBT 環境設定スクリプトをテストするワークフローを作成しました。
+
+テスト内容:
+
+1. VSBT 環境設定スクリプトの実行
+2. MSVC コンパイラ (cl.exe) の存在確認
+3. 環境変数の検証 (INCLUDE, LIB, VCToolsVersion など)
+4. 簡単な C プログラムのコンパイルと実行
+5. 簡単な C++ プログラムのコンパイルと実行
+
+### env-diagnostics.yml の修正
+
+Chocolatey の `--local-only` オプションが廃止されたため、`choco --version` に変更してエラーを回避しました。
+
 ## 次のステップ
 
-1. ワークフローを実行して Windows Runner の環境情報を収集
-2. 収集した情報を基に sample スクリプトのパスを GitHub Actions 環境に適合させる
-3. 修正したスクリプトを Actions で実行してテスト
+1. ワークフローを実行してスクリプトの動作確認
+2. 必要に応じてバージョン番号の動的検出機能を追加

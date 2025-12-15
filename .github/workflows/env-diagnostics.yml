@@ -123,8 +123,8 @@ jobs:
 
           # chocolatey でインストールされたツール
           if (Get-Command choco -ErrorAction SilentlyContinue) {
-            Write-Host "Chocolatey packages:"
-            choco list --local-only
+            Write-Host "Chocolatey version:"
+            choco --version
           }
 
           # その他の開発ツール
