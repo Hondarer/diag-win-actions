@@ -158,7 +158,27 @@ VSBT 環境設定スクリプトをテストするワークフローを作成し
    - SDK 10.0.26100.0 の bin/include/lib の存在確認
    - 各ディレクトリの内容表示
 
+## 問題と修正
+
+### 初回実行での問題 (Run ID: 52308335504, 52308335518)
+
+**問題**: VSBT スクリプトが "VSBT PATH addition completed." と表示されるが、次のステップで cl.exe が PATH に見つからない
+
+**原因**: GitHub Actions では各ステップが独立した PowerShell セッションで実行されるため、`$env:PATH` などの環境変数は次のステップに引き継がれない
+
+**修正内容**:
+
+1. `$env:PATH` の代わりに `$env:GITHUB_PATH` に書き込むように変更
+2. `$env:INCLUDE`, `$env:LIB` などの環境変数も `$env:GITHUB_ENV` に書き込むように変更
+3. GitHub Actions の環境変数永続化メカニズムを使用
+
+修正後のスクリプトでは以下を実施:
+
+- `Add-Content -Path $env:GITHUB_PATH -Value $pathToAdd` で PATH を永続化
+- `Add-Content -Path $env:GITHUB_ENV -Value "KEY=VALUE"` で環境変数を永続化
+
 ## 次のステップ
 
-1. ワークフローを実行してスクリプトの動作確認
-2. 必要に応じてバージョン番号の動的検出機能を追加
+1. 修正したスクリプトでワークフローを再実行
+2. cl.exe が正しく PATH に含まれることを確認
+3. C/C++ プログラムのコンパイルテストが成功することを確認

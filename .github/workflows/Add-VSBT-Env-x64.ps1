@@ -1,5 +1,5 @@
 # VSBT PATH 動的追加スクリプト (PowerShell) - GitHub Actions 専用
-# MSVC と Windows SDK を現在のセッションの環境変数に追加します
+# MSVC と Windows SDK を GitHub Actions の環境変数に追加します
 
 # GitHub Actions 環境の Visual Studio インストールパスを取得
 $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
@@ -36,37 +36,26 @@ if (-not (Test-Path $sdkBin)) {
     exit 1
 }
 
-# 環境変数を設定 (常に上書き)
-$env:VSCMD_ARG_HOST_ARCH = "x64"
-$env:VSCMD_ARG_TGT_ARCH = "x64"
-$env:VCToolsVersion = "14.44.35207"
-$env:WindowsSDKVersion = "10.0.26100.0"
-$env:VCToolsInstallDir = Join-Path $vsbtBase "VC\Tools\MSVC\14.44.35207"
-$env:WindowsSdkBinPath = "${env:ProgramFiles(x86)}\Windows Kits\10\bin"
-
+# GitHub Actions の環境変数に PATH を追加
 $pathsToAdd = @($msvcBin, $sdkBin, $sdkUcrtBin, $diaBin)
-$currentPath = $env:PATH
-$pathChanged = $false
 
 foreach ($pathToAdd in $pathsToAdd) {
-    # 既存の PATH にパスが含まれているかチェック
-    $pathExists = $currentPath -split ';' | Where-Object { $_ -eq $pathToAdd }
-
-    if ($pathExists) {
-        # Write-Host "PATH already set: $pathToAdd"
-    } else {
-        # パスを先頭に追加
-        $env:PATH = "$pathToAdd;$env:PATH"
-        $pathChanged = $true
-    }
+    Write-Host "Adding to PATH: $pathToAdd"
+    Add-Content -Path $env:GITHUB_PATH -Value $pathToAdd
 }
 
-# INCLUDE と LIB は常に上書き
-$env:INCLUDE = "$msvcInclude;$sdkUcrtInclude;$sdkSharedInclude;$sdkUmInclude;$sdkWinrtInclude;$sdkCppWinrtInclude;$diaInclude"
-$env:LIB = "$msvcLib;$sdkUcrtLib;$sdkUmLib;$diaLib"
+# GitHub Actions の環境変数に INCLUDE, LIB などを追加
+$includeValue = "$msvcInclude;$sdkUcrtInclude;$sdkSharedInclude;$sdkUmInclude;$sdkWinrtInclude;$sdkCppWinrtInclude;$diaInclude"
+$libValue = "$msvcLib;$sdkUcrtLib;$sdkUmLib;$diaLib"
 
-if ($pathChanged) {
-    Write-Host "VSBT PATH addition completed."
-} else {
-    Write-Host "VSBT PATH already set."
-}
+Write-Host "Setting environment variables for GitHub Actions..."
+Add-Content -Path $env:GITHUB_ENV -Value "VSCMD_ARG_HOST_ARCH=x64"
+Add-Content -Path $env:GITHUB_ENV -Value "VSCMD_ARG_TGT_ARCH=x64"
+Add-Content -Path $env:GITHUB_ENV -Value "VCToolsVersion=14.44.35207"
+Add-Content -Path $env:GITHUB_ENV -Value "WindowsSDKVersion=10.0.26100.0"
+Add-Content -Path $env:GITHUB_ENV -Value "VCToolsInstallDir=$(Join-Path $vsbtBase 'VC\Tools\MSVC\14.44.35207')"
+Add-Content -Path $env:GITHUB_ENV -Value "WindowsSdkBinPath=${env:ProgramFiles(x86)}\Windows Kits\10\bin"
+Add-Content -Path $env:GITHUB_ENV -Value "INCLUDE=$includeValue"
+Add-Content -Path $env:GITHUB_ENV -Value "LIB=$libValue"
+
+Write-Host "VSBT environment setup completed."
