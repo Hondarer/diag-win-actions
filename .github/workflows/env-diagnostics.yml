@@ -183,14 +183,59 @@ jobs:
 
           # その他の開発ツール
           Write-Host "`n=== Development Tools ===" -ForegroundColor Green
-          $tools = @('cmake', 'ninja', 'make', 'gcc', 'g++', 'clang')
-          foreach ($tool in $tools) {
-            $cmd = Get-Command $tool -ErrorAction SilentlyContinue
-            if ($cmd) {
-              Write-Host "$tool : $($cmd.Source)"
-            } else {
-              Write-Host "$tool : Not found"
-            }
+
+          # cmake
+          $cmd = Get-Command cmake -ErrorAction SilentlyContinue
+          if ($cmd) {
+            Write-Host "cmake : $($cmd.Source)"
+            cmake --version | Select-Object -First 1
+          } else {
+            Write-Host "cmake : Not found"
+          }
+
+          # ninja
+          $cmd = Get-Command ninja -ErrorAction SilentlyContinue
+          if ($cmd) {
+            Write-Host "`nninja : $($cmd.Source)"
+            ninja --version
+          } else {
+            Write-Host "`nninja : Not found"
+          }
+
+          # make
+          $cmd = Get-Command make -ErrorAction SilentlyContinue
+          if ($cmd) {
+            Write-Host "`nmake : $($cmd.Source)"
+            make --version | Select-Object -First 1
+          } else {
+            Write-Host "`nmake : Not found"
+          }
+
+          # gcc
+          $cmd = Get-Command gcc -ErrorAction SilentlyContinue
+          if ($cmd) {
+            Write-Host "`ngcc : $($cmd.Source)"
+            gcc --version | Select-Object -First 1
+          } else {
+            Write-Host "`ngcc : Not found"
+          }
+
+          # g++
+          $cmd = Get-Command g++ -ErrorAction SilentlyContinue
+          if ($cmd) {
+            Write-Host "`ng++ : $($cmd.Source)"
+            g++ --version | Select-Object -First 1
+          } else {
+            Write-Host "`ng++ : Not found"
+          }
+
+          # clang
+          $cmd = Get-Command clang -ErrorAction SilentlyContinue
+          if ($cmd) {
+            Write-Host "`nclang : $($cmd.Source)"
+            clang --version | Select-Object -First 1
+          } else {
+            Write-Host "`nclang : Not found"
           }
 
       - name: Disk and directory structure
