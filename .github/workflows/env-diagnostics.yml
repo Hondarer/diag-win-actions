@@ -1,0 +1,166 @@
+name: Windows Runner Environment Diagnostics
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  environment-survey:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: System information
+        shell: pwsh
+        run: |
+          Write-Host "=== System Information ===" -ForegroundColor Green
+          Get-ComputerInfo | Select-Object CsName, WindowsVersion, OsArchitecture, OsLanguage
+          Write-Host "`n=== PowerShell Version ===" -ForegroundColor Green
+          $PSVersionTable
+
+      - name: Environment variables
+        shell: pwsh
+        run: |
+          Write-Host "=== Environment Variables ===" -ForegroundColor Green
+          Get-ChildItem env: | Sort-Object Name | Format-Table -AutoSize
+
+      - name: PATH analysis
+        shell: pwsh
+        run: |
+          Write-Host "=== PATH Environment Variable ===" -ForegroundColor Green
+          $env:PATH -split ';' | ForEach-Object { Write-Host $_ }
+
+      - name: Git installation check
+        shell: pwsh
+        run: |
+          Write-Host "=== Git Installation ===" -ForegroundColor Green
+          git --version
+          $gitPath = (Get-Command git).Source
+          Write-Host "Git executable: $gitPath"
+
+          $gitRoot = Split-Path (Split-Path $gitPath)
+          Write-Host "Git root: $gitRoot"
+
+          $mingwPath = Join-Path $gitRoot "mingw64\bin"
+          $usrPath = Join-Path $gitRoot "usr\bin"
+
+          Write-Host "`nMinGW path: $mingwPath"
+          Write-Host "MinGW exists: $(Test-Path $mingwPath)"
+
+          Write-Host "`nusr/bin path: $usrPath"
+          Write-Host "usr/bin exists: $(Test-Path $usrPath)"
+
+          if (Test-Path $mingwPath) {
+            Write-Host "`nMinGW binaries (first 20):"
+            Get-ChildItem $mingwPath -File | Select-Object -First 20 | ForEach-Object { Write-Host "  $_" }
+          }
+
+      - name: Visual Studio and MSVC check
+        shell: pwsh
+        run: |
+          Write-Host "=== Visual Studio Installation ===" -ForegroundColor Green
+
+          # vswhere を使用して VS インストール情報を取得
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          if (Test-Path $vswhere) {
+            Write-Host "VS installations:"
+            & $vswhere -all -prerelease -property installationPath
+
+            Write-Host "`nVS detailed info:"
+            & $vswhere -all -prerelease
+          }
+
+          # MSVC コンパイラの確認
+          Write-Host "`n=== MSVC Compiler ===" -ForegroundColor Green
+          $clPath = Get-Command cl.exe -ErrorAction SilentlyContinue
+          if ($clPath) {
+            Write-Host "cl.exe found: $($clPath.Source)"
+            cl.exe 2>&1 | Select-Object -First 5
+          } else {
+            Write-Host "cl.exe not found in PATH"
+          }
+
+      - name: Windows SDK check
+        shell: pwsh
+        run: |
+          Write-Host "=== Windows SDK ===" -ForegroundColor Green
+
+          $sdkRoot = "${env:ProgramFiles(x86)}\Windows Kits\10"
+          if (Test-Path $sdkRoot) {
+            Write-Host "Windows SDK root: $sdkRoot"
+
+            $includePath = Join-Path $sdkRoot "Include"
+            $libPath = Join-Path $sdkRoot "Lib"
+            $binPath = Join-Path $sdkRoot "bin"
+
+            if (Test-Path $includePath) {
+              Write-Host "`nAvailable SDK versions (Include):"
+              Get-ChildItem $includePath -Directory | ForEach-Object { Write-Host "  $($_.Name)" }
+            }
+
+            if (Test-Path $libPath) {
+              Write-Host "`nAvailable SDK versions (Lib):"
+              Get-ChildItem $libPath -Directory | ForEach-Object { Write-Host "  $($_.Name)" }
+            }
+
+            if (Test-Path $binPath) {
+              Write-Host "`nAvailable SDK versions (Bin):"
+              Get-ChildItem $binPath -Directory | ForEach-Object { Write-Host "  $($_.Name)" }
+            }
+          } else {
+            Write-Host "Windows SDK not found at $sdkRoot"
+          }
+
+      - name: Installed programs check
+        shell: pwsh
+        run: |
+          Write-Host "=== Installed Programs ===" -ForegroundColor Green
+
+          # chocolatey でインストールされたツール
+          if (Get-Command choco -ErrorAction SilentlyContinue) {
+            Write-Host "Chocolatey packages:"
+            choco list --local-only
+          }
+
+          # その他の開発ツール
+          Write-Host "`n=== Development Tools ===" -ForegroundColor Green
+          $tools = @('cmake', 'ninja', 'make', 'gcc', 'g++', 'clang')
+          foreach ($tool in $tools) {
+            $cmd = Get-Command $tool -ErrorAction SilentlyContinue
+            if ($cmd) {
+              Write-Host "$tool : $($cmd.Source)"
+            } else {
+              Write-Host "$tool : Not found"
+            }
+          }
+
+      - name: Disk and directory structure
+        shell: pwsh
+        run: |
+          Write-Host "=== Disk Information ===" -ForegroundColor Green
+          Get-PSDrive -PSProvider FileSystem | Format-Table -AutoSize
+
+          Write-Host "`n=== Runner workspace ===" -ForegroundColor Green
+          Write-Host "GITHUB_WORKSPACE: $env:GITHUB_WORKSPACE"
+          Write-Host "Current directory: $(Get-Location)"
+
+          Write-Host "`nWorkspace contents:"
+          Get-ChildItem $env:GITHUB_WORKSPACE -Force
+
+      - name: Test sample scripts availability
+        shell: pwsh
+        run: |
+          Write-Host "=== Sample Scripts Check ===" -ForegroundColor Green
+
+          $sampleDir = Join-Path $env:GITHUB_WORKSPACE "sample"
+          if (Test-Path $sampleDir) {
+            Write-Host "Sample directory contents:"
+            Get-ChildItem $sampleDir | ForEach-Object { Write-Host "  $($_.Name)" }
+          } else {
+            Write-Host "Sample directory not found"
+          }
