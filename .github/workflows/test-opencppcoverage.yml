@@ -20,6 +20,17 @@ jobs:
         run: |
           Write-Host "Installing OpenCppCoverage..."
           choco install opencppcoverage -y
+
+          # PATH に追加 (GitHub Actions の永続化メカニズムを使用)
+          $opencppPath = "C:\Program Files\OpenCppCoverage"
+          if (Test-Path $opencppPath) {
+              Write-Host "`nAdding OpenCppCoverage to PATH..."
+              Add-Content -Path $env:GITHUB_PATH -Value $opencppPath
+              Write-Host "PATH addition completed."
+          } else {
+              Write-Host "ERROR: OpenCppCoverage installation directory not found at $opencppPath"
+              exit 1
+          }
         shell: pwsh
 
       - name: Verify OpenCppCoverage installation
