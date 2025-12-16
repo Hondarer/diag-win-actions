@@ -1,12 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#if _WIN32
-#pragma warning(push)
-#pragma warning(disable: 4100)
-#else
+#if !_WIN32
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
+#else
+#pragma warning(push)
+#pragma warning(disable: 4100)
 #endif
 
 int main(int argc, char *argv[])
@@ -15,8 +15,8 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-#if _WIN32
-#pragma warning(pop)
-#else
+#if !_WIN32
 #pragma GCC diagnostic pop
+#else
+#pragma warning(pop)
 #endif

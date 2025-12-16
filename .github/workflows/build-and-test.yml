@@ -65,6 +65,21 @@ jobs:
           $LASTEXITCODE = 0  # exit code をリセット (--help は exit code 1 を返す)
         shell: pwsh
 
+      - name: Debug PATH and link command
+        run: |
+          echo "=== Current PATH in bash ==="
+          echo "$PATH" | tr ':' '\n' | head -20
+          echo ""
+          echo "=== Which link ==="
+          which -a link || echo "link command not found via which"
+          echo ""
+          echo "=== Checking for link.exe ==="
+          which -a link.exe || echo "link.exe not found via which"
+          echo ""
+          echo "=== MSVC bin directory contents ==="
+          ls -la "/c/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/" | grep -E "(link|cl)\.exe"
+        shell: bash
+
       - name: Build with make
         run: make
         shell: bash
