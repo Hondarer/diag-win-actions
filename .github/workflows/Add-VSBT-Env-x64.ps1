@@ -37,7 +37,9 @@ if (-not (Test-Path $sdkBin)) {
 }
 
 # GitHub Actions の環境変数に PATH を追加
-$pathsToAdd = @($msvcBin, $sdkBin, $sdkUcrtBin, $diaBin)
+# 注: GitHub Actions では後に追加したパスほど PATH の先頭に来るため、
+#     MSVC のパスを最後に追加することで、link.exe などが確実に MSVC のものになる
+$pathsToAdd = @($diaBin, $sdkUcrtBin, $sdkBin, $msvcBin)
 
 foreach ($pathToAdd in $pathsToAdd) {
     Write-Host "Adding to PATH: $pathToAdd"
