@@ -45,7 +45,7 @@ Windows Runner の環境調査用ワークフローです。以下の情報を�
 
 ## GitHub Actions Windows Runner 環境調査結果
 
-ワークフロー実行結果 (Run ID: 20249876191)
+> **調査日**: 2025-12-16 (Run ID: 20249876191, 52309684289)
 
 ### 基本環境
 
@@ -82,43 +82,48 @@ Windows Runner の環境調査用ワークフローです。以下の情報を�
 
 ### 開発ツール
 
-PATH に含まれている開発ツール:
+PATH に含まれている開発ツール (バージョン情報):
 
-- cmake: `C:\Program Files\CMake\bin\cmake.exe`
-- ninja: `C:\ProgramData\Chocolatey\bin\ninja.exe`
-- make: `C:\mingw64\bin\make.exe`
-- gcc: `C:\mingw64\bin\gcc.exe`
-- g++: `C:\mingw64\bin\g++.exe`
-- clang: `C:\Program Files\LLVM\bin\clang.exe`
+- **cmake**: `C:\Program Files\CMake\bin\cmake.exe`
+  - バージョン: 3.31.6
+- **ninja**: `C:\ProgramData\Chocolatey\bin\ninja.exe`
+  - バージョン: 1.13.2
+- **make**: `C:\mingw64\bin\make.exe`
+  - バージョン: GNU Make 4.4.1
+- **gcc**: `C:\mingw64\bin\gcc.exe`
+  - バージョン: 15.2.0 (x86_64-posix-seh-rev0, Built by MinGW-Builds project)
+- **g++**: `C:\mingw64\bin\g++.exe`
+  - バージョン: 15.2.0 (x86_64-posix-seh-rev0, Built by MinGW-Builds project)
+- **clang**: `C:\Program Files\LLVM\bin\clang.exe`
+  - バージョン: 20.1.8
+- **Chocolatey**: 2.6.0
 
 注: `C:\mingw64` は Git とは別の MinGW インストール
 
-## スクリプト修正方針
+## 実装の説明
 
-### Add-MinGW-Path スクリプト
+### ローカル環境と GitHub Actions 環境の違い
 
-GitHub Actions 環境では、Git MinGW は既に PATH に含まれているため、スクリプトの修正が必要:
+**ローカル環境** (sample ディレクトリのスクリプト):
+- `Add-MinGW-Path`: スクリプトと同じディレクトリの `git\mingw64\bin` を参照
+- `Add-VSBT-Env-x64`: スクリプトと同じディレクトリの `vsbt` を参照
 
-1. ローカル環境: スクリプトと同じディレクトリの `git\mingw64\bin` を参照
-2. GitHub Actions 環境: `C:\Program Files\Git\mingw64\bin` を参照
+**GitHub Actions 環境** (.github/workflows のスクリプト):
+- `Add-MinGW-Path`: 不要 (既に PATH に含まれている)
+- `Add-VSBT-Env-x64`: Visual Studio は `C:\Program Files\Microsoft Visual Studio\2022\Enterprise` にインストール済み
 
-対応策:
+### 実装方針
 
-- 環境変数 `GITHUB_ACTIONS` の有無で動作を切り替える
-- GitHub Actions 環境では既に PATH に含まれているため、何もしないか確認のみ
+GitHub Actions 専用の実装として以下を採用:
 
-### Add-VSBT-Env スクリプト
-
-GitHub Actions 環境では、Visual Studio は別の場所にインストールされているため、パスの修正が必要:
-
-1. ローカル環境: スクリプトと同じディレクトリの `vsbt` を参照
-2. GitHub Actions 環境: `C:\Program Files\Microsoft Visual Studio\2022\Enterprise` を参照
-
-対応策:
-
-- 環境変数 `GITHUB_ACTIONS` の有無で動作を切り替える
-- vswhere.exe を使用して Visual Studio のインストールパスを動的に取得
-- MSVC のバージョン番号もハードコードせず、動的に検出
+- **互換性は考慮不要**: ローカル環境との互換性は不要
+- **Add-MinGW-Path**: GitHub Actions では不要 (スクリプト作成せず)
+- **Add-VSBT-Env-x64**:
+  - `.github/workflows` に GitHub Actions 専用版を配置
+  - vswhere.exe で Visual Studio のインストールパスを動的取得
+  - スクリプト構造は元のロジックを維持
+  - MSVC 14.44.35207 と Windows SDK 10.0.26100.0 が見つからない場合はエラー終了
+  - GitHub Actions の環境変数永続化メカニズムを使用
 
 ## 実装内容
 
@@ -126,12 +131,36 @@ GitHub Actions 環境では、Visual Studio は別の場所にインストール
 
 GitHub Actions 専用の VSBT 環境設定スクリプトを作成しました。
 
-主な変更点:
+**ファイル構成**:
+
+```
+D:\Users\tetsuo\Local\repos\diag-win-actions
+├── .github
+│   └── workflows
+│       ├── Add-VSBT-Env-x64.ps1       ← GitHub Actions 専用
+│       ├── env-diagnostics.yml
+│       └── test-vsbt-setup.yml
+└── sample
+    ├── Add-MinGW-Path.cmd
+    ├── Add-MinGW-Path.ps1
+    ├── Add-VSBT-Env-x64.cmd
+    └── Add-VSBT-Env-x64.ps1          ← ローカル環境用 (元のまま)
+```
+
+**主な実装内容**:
 
 - L5-7: `vswhere.exe` を使用して Visual Studio のインストールパスを動的取得
+  ```powershell
+  $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+  $vsInstallPath = & $vswhere -latest -property installationPath
+  $vsbtBase = $vsInstallPath
+  ```
 - Windows SDK は `${env:ProgramFiles(x86)}\Windows Kits\10` から直接参照
-- MSVC と Windows SDK の両方で存在確認を実施 (見つからない場合はエラー終了)
-- バージョン固定: MSVC 14.44.35207、Windows SDK 10.0.26100.0
+- MSVC 14.44.35207 と Windows SDK 10.0.26100.0 の存在確認を実施
+- 見つからない場合はエラー終了 (`exit 1`)
+- GitHub Actions の環境変数永続化メカニズムを使用:
+  - `$env:GITHUB_PATH` に PATH を追加
+  - `$env:GITHUB_ENV` に環境変数 (INCLUDE, LIB, VCToolsVersion など) を追加
 
 ### .github/workflows/test-vsbt-setup.yml
 
@@ -145,18 +174,24 @@ VSBT 環境設定スクリプトをテストするワークフローを作成し
 4. 簡単な C プログラムのコンパイルと実行
 5. 簡単な C++ プログラムのコンパイルと実行
 
-### env-diagnostics.yml の修正
+### .github/workflows/env-diagnostics.yml の修正
 
-以下の修正を実施しました:
+Windows Runner 環境診断ワークフローに以下の修正を実施しました:
 
-1. Chocolatey の `--local-only` オプションが廃止されたため、`choco --version` に変更してエラーを回避
-2. 先頭に `Add-VSBT-Env-x64.ps1` の呼び出しを追加
-3. Visual Studio と MSVC チェックに以下を追加:
+**修正内容**:
+
+1. **Chocolatey エラーの修正**: `--local-only` オプションが廃止されたため `choco --version` に変更
+2. **VSBT スクリプト呼び出し追加**: checkout の直後に `Add-VSBT-Env-x64.ps1` を実行
+3. **Visual Studio と MSVC チェックの拡張**:
    - VSBT 環境変数の確認 (VCToolsVersion, VCToolsInstallDir, WindowsSDKVersion など)
-   - MSVC 14.44.35207 の存在確認とバイナリ一覧表示
-4. Windows SDK チェックに以下を追加:
+   - MSVC 14.44.35207 のパス存在確認
+   - MSVC バイナリの一覧表示 (先頭 10 個)
+4. **Windows SDK チェックの拡張**:
    - SDK 10.0.26100.0 の bin/include/lib の存在確認
    - 各ディレクトリの内容表示
+5. **開発ツールのバージョン表示追加**:
+   - cmake, ninja, make, gcc, g++, clang の各ツールについて
+   - パスとバージョン情報を両方表示
 
 ## 問題と修正
 
@@ -177,8 +212,40 @@ VSBT 環境設定スクリプトをテストするワークフローを作成し
 - `Add-Content -Path $env:GITHUB_PATH -Value $pathToAdd` で PATH を永続化
 - `Add-Content -Path $env:GITHUB_ENV -Value "KEY=VALUE"` で環境変数を永続化
 
-## 次のステップ
+## 作業履歴
+
+### 2025-12-16
+
+1. **初回環境調査** (Run ID: 20249876191)
+   - Windows Runner の環境情報を収集
+   - Git MinGW が既に PATH に含まれていることを確認
+   - Visual Studio 2022 Enterprise インストール済みだが cl.exe は PATH になし
+
+2. **VSBT スクリプト作成**
+   - GitHub Actions 専用の `Add-VSBT-Env-x64.ps1` を実装
+   - vswhere.exe で Visual Studio パスを動的取得
+   - MSVC 14.44.35207 と Windows SDK 10.0.26100.0 の存在確認
+
+3. **環境変数永続化の問題発見と修正** (Run ID: 52308335504, 52308335518)
+   - 問題: `$env:PATH` が次のステップに引き継がれない
+   - 修正: `$env:GITHUB_PATH` と `$env:GITHUB_ENV` を使用
+
+4. **診断ワークフローの拡張**
+   - VSBT 環境変数の確認項目を追加
+   - MSVC と SDK のパス確認を追加
+   - 開発ツールのバージョン表示を追加
+
+## 現在の状態
+
+### 完成したファイル
+
+- `.github/workflows/Add-VSBT-Env-x64.ps1`: GitHub Actions で MSVC 環境を設定
+- `.github/workflows/test-vsbt-setup.yml`: VSBT スクリプトのテストワークフロー
+- `.github/workflows/env-diagnostics.yml`: 環境診断ワークフロー (VSBT 統合済み)
+
+### 次のステップ
 
 1. 修正したスクリプトでワークフローを再実行
 2. cl.exe が正しく PATH に含まれることを確認
 3. C/C++ プログラムのコンパイルテストが成功することを確認
+4. 必要に応じてバージョン番号の動的検出機能を追加 (現在は 14.44.35207 固定)

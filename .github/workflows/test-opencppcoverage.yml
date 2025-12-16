@@ -1,0 +1,132 @@
+name: Test OpenCppCoverage Installation
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/test-opencppcoverage.yml'
+
+jobs:
+  test-opencppcoverage:
+    runs-on: windows-2025
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install OpenCppCoverage with Chocolatey
+        run: |
+          Write-Host "Installing OpenCppCoverage..."
+          choco install opencppcoverage -y
+        shell: pwsh
+
+      - name: Verify OpenCppCoverage installation
+        run: |
+          Write-Host "`n=== OpenCppCoverage Installation Check ==="
+
+          # PATH の確認
+          Write-Host "`nChecking PATH for OpenCppCoverage..."
+          $opencppPath = Get-Command OpenCppCoverage.exe -ErrorAction SilentlyContinue
+          if ($opencppPath) {
+              Write-Host "OpenCppCoverage.exe found at: $($opencppPath.Source)"
+          } else {
+              Write-Host "ERROR: OpenCppCoverage.exe not found in PATH"
+              exit 1
+          }
+
+          # バージョン表示
+          Write-Host "`nOpenCppCoverage version:"
+          OpenCppCoverage.exe --help | Select-Object -First 5
+
+          # インストールディレクトリの確認
+          Write-Host "`nInstallation directory:"
+          $installDir = Split-Path -Parent $opencppPath.Source
+          Write-Host $installDir
+          Get-ChildItem $installDir | Select-Object Name, Length | Format-Table
+        shell: pwsh
+
+      - name: Setup MSVC environment
+        run: |
+          Write-Host "Setting up MSVC environment..."
+          & "${{ github.workspace }}\.github\workflows\Add-VSBT-Env-x64.ps1"
+        shell: pwsh
+
+      - name: Create test C++ program
+        run: |
+          $testCode = @'
+          #include <iostream>
+
+          int add(int a, int b) {
+              return a + b;
+          }
+
+          int subtract(int a, int b) {
+              return a - b;
+          }
+
+          int main() {
+              std::cout << "Testing coverage..." << std::endl;
+
+              int result1 = add(5, 3);
+              std::cout << "5 + 3 = " << result1 << std::endl;
+
+              int result2 = subtract(10, 4);
+              std::cout << "10 - 4 = " << result2 << std::endl;
+
+              return 0;
+          }
+          '@
+
+          Set-Content -Path "test_coverage.cpp" -Value $testCode -Encoding UTF8
+          Write-Host "Test C++ program created: test_coverage.cpp"
+          Get-Content test_coverage.cpp
+        shell: pwsh
+
+      - name: Compile test program
+        run: |
+          Write-Host "`n=== Compiling test program ==="
+          cl.exe /EHsc /Zi /Od test_coverage.cpp /Fe:test_coverage.exe
+
+          if (Test-Path "test_coverage.exe") {
+              Write-Host "`nCompilation successful!"
+              Write-Host "Generated files:"
+              Get-ChildItem test_coverage.* | Select-Object Name, Length | Format-Table
+          } else {
+              Write-Host "ERROR: Compilation failed"
+              exit 1
+          }
+        shell: pwsh
+
+      - name: Run coverage analysis
+        run: |
+          Write-Host "`n=== Running OpenCppCoverage ==="
+
+          # カバレッジ解析を実行
+          OpenCppCoverage.exe --sources ${{ github.workspace }} -- test_coverage.exe
+
+          Write-Host "`nCoverage analysis completed!"
+        shell: pwsh
+
+      - name: Run coverage with HTML export
+        run: |
+          Write-Host "`n=== Running OpenCppCoverage with HTML export ==="
+
+          # HTML レポートを生成
+          New-Item -ItemType Directory -Force -Path "coverage_report" | Out-Null
+          OpenCppCoverage.exe --sources ${{ github.workspace }} --export_type html:coverage_report -- test_coverage.exe
+
+          Write-Host "`nHTML report generated!"
+          if (Test-Path "coverage_report") {
+              Write-Host "Coverage report contents:"
+              Get-ChildItem coverage_report -Recurse | Select-Object FullName, Length | Format-Table
+          }
+        shell: pwsh
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage_report/
+          if-no-files-found: warn
