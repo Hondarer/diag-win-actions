@@ -47,9 +47,10 @@ jobs:
               exit 1
           }
 
-          # バージョン表示
+          # バージョン表示 (--help は exit code 1 を返すため、エラーを無視)
           Write-Host "`nOpenCppCoverage version:"
-          OpenCppCoverage.exe --help | Select-Object -First 5
+          & OpenCppCoverage.exe --help 2>&1 | Select-Object -First 5
+          $LASTEXITCODE = 0  # exit code をリセット
 
           # インストールディレクトリの確認
           Write-Host "`nInstallation directory:"
