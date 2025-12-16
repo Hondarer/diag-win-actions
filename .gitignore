@@ -1,1 +1,51 @@
-/logs
+# 全部のファイルを管理対象外
+*
+
+# 管理対象
+
+## ディレクトリ配下のディレクトリ
+!*/
+
+## ディレクトリ配下の拡張子付きファイル
+!*.*
+
+## Makefile
+!Makefile
+
+## サブモジュール
+!/docsfw
+!/doxyfw
+!/makefw
+!/testfw
+
+# 以下は管理対象外
+
+## Claude Code
+/.claude
+
+## 中間ファイル
+lib
+obj
+gcov
+lcov
+coverage
+results
+core
+coverage.xml
+
+## 中間ファイル (Doxygen)
+/xml/
+/xml_org/
+
+## doxybook によって生成される Markdown
+/docs-src/doxybook/
+
+## 生成ドキュメント (gh-pages で公開)
+/docs/
+
+## 成果物 (Windows)
+*.exe
+*.pdb
+
+## 調査用ログ
+/logs/

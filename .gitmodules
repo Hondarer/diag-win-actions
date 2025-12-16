@@ -1,0 +1,3 @@
+[submodule "makefw"]
+	path = makefw
+	url = https://github.com/Hondarer/make-framework.git
