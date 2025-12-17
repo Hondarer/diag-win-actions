@@ -62,19 +62,37 @@ Add-Content -Path $env:GITHUB_ENV -Value "LIB=$libValue"
 
 # Makefile から呼び出される bash で MSVC ツールを使用するため、環境変数を設定
 # CC, CXX, LD, AR を絶対パスで指定することで、bash の PATH に依存せず確実に MSVC ツールが使用される
+# bash でスペースを含むパスを正しく処理するため、8.3 形式のショートパスを使用
 $clExePath = Join-Path $msvcBin "cl.exe"
 $linkExePath = Join-Path $msvcBin "link.exe"
 $libExePath = Join-Path $msvcBin "lib.exe"
 
-Add-Content -Path $env:GITHUB_ENV -Value "CC=$clExePath"
-Add-Content -Path $env:GITHUB_ENV -Value "CXX=$clExePath"
-Add-Content -Path $env:GITHUB_ENV -Value "LD=$linkExePath"
-Add-Content -Path $env:GITHUB_ENV -Value "AR=$libExePath"
+# 8.3 形式のショートパスに変換 (スペースを含まない形式)
+function Get-ShortPath {
+    param([string]$LongPath)
+    try {
+        $fso = New-Object -ComObject Scripting.FileSystemObject
+        $file = $fso.GetFile($LongPath)
+        return $file.ShortPath
+    } catch {
+        Write-Host "Warning: Could not get short path for $LongPath, using original path"
+        return $LongPath
+    }
+}
 
-Write-Host "MSVC tool environment variables set:"
-Write-Host "  CC=$clExePath"
-Write-Host "  CXX=$clExePath"
-Write-Host "  LD=$linkExePath"
-Write-Host "  AR=$libExePath"
+$clExePathShort = Get-ShortPath $clExePath
+$linkExePathShort = Get-ShortPath $linkExePath
+$libExePathShort = Get-ShortPath $libExePath
+
+Add-Content -Path $env:GITHUB_ENV -Value "CC=$clExePathShort"
+Add-Content -Path $env:GITHUB_ENV -Value "CXX=$clExePathShort"
+Add-Content -Path $env:GITHUB_ENV -Value "LD=$linkExePathShort"
+Add-Content -Path $env:GITHUB_ENV -Value "AR=$libExePathShort"
+
+Write-Host "MSVC tool environment variables set (8.3 short paths for bash compatibility):"
+Write-Host "  CC=$clExePathShort"
+Write-Host "  CXX=$clExePathShort"
+Write-Host "  LD=$linkExePathShort"
+Write-Host "  AR=$libExePathShort"
 
 Write-Host "VSBT environment setup completed."
