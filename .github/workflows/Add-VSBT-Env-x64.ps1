@@ -60,4 +60,9 @@ Add-Content -Path $env:GITHUB_ENV -Value "WindowsSdkBinPath=${env:ProgramFiles(x
 Add-Content -Path $env:GITHUB_ENV -Value "INCLUDE=$includeValue"
 Add-Content -Path $env:GITHUB_ENV -Value "LIB=$libValue"
 
+# Makefile から呼び出される bash で MSVC の link.exe を使用するため、LD 環境変数を設定
+$linkExePath = Join-Path $msvcBin "link.exe"
+Add-Content -Path $env:GITHUB_ENV -Value "LD=$linkExePath"
+Write-Host "LD environment variable set to: $linkExePath"
+
 Write-Host "VSBT environment setup completed."

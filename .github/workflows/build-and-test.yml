@@ -46,6 +46,7 @@ jobs:
           Write-Host "VCToolsVersion: $env:VCToolsVersion"
           Write-Host "WindowsSDKVersion: $env:WindowsSDKVersion"
           Write-Host "VCToolsInstallDir: $env:VCToolsInstallDir"
+          Write-Host "LD: $env:LD"
           Write-Host ""
           Write-Host "=== Checking cl.exe ==="
           $clPath = (Get-Command cl.exe).Source
