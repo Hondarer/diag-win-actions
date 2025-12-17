@@ -125,8 +125,22 @@ jobs:
 
       - name: Build with make
         run: |
+          # Windows パスを Git Bash 形式に変換
+          # cygpath コマンドで Windows パス (C:\...) を Unix 形式 (/c/...) に変換
+          export CC=$(cygpath -u "$CC")
+          export CXX=$(cygpath -u "$CXX")
+          export LD=$(cygpath -u "$LD")
+          export AR=$(cygpath -u "$AR")
+
+          echo "=== Converted environment variables to Git Bash format ==="
+          echo "CC=$CC"
+          echo "CXX=$CXX"
+          echo "LD=$LD"
+          echo "AR=$AR"
+          echo ""
+
           make
-        shell: pwsh
+        shell: bash
 
       - name: Run testmain.exe
         run: |
