@@ -42,11 +42,16 @@ jobs:
 
       - name: Verify environment
         run: |
-          Write-Host "=== Environment Variables ==="
+          Write-Host "=== MSVC Environment Variables ==="
           Write-Host "VCToolsVersion: $env:VCToolsVersion"
           Write-Host "WindowsSDKVersion: $env:WindowsSDKVersion"
           Write-Host "VCToolsInstallDir: $env:VCToolsInstallDir"
+          Write-Host ""
+          Write-Host "=== Makefile Tool Variables ==="
+          Write-Host "CC: $env:CC"
+          Write-Host "CXX: $env:CXX"
           Write-Host "LD: $env:LD"
+          Write-Host "AR: $env:AR"
           Write-Host ""
           Write-Host "=== Checking cl.exe ==="
           $clPath = (Get-Command cl.exe).Source
@@ -65,6 +70,32 @@ jobs:
           & OpenCppCoverage.exe --help 2>&1 | Select-Object -First 5
           $LASTEXITCODE = 0  # exit code をリセット (--help は exit code 1 を返す)
         shell: pwsh
+
+      - name: Debug - Verify CC environment variable in bash
+        run: |
+          echo "=== Hypothesis: bash sets CC=cc automatically ==="
+          echo ""
+          echo "--- PowerShell environment (before bash) ---"
+          Write-Host "CC in PowerShell: $env:CC"
+          Write-Host "CXX in PowerShell: $env:CXX"
+          Write-Host "LD in PowerShell: $env:LD"
+          Write-Host "AR in PowerShell: $env:AR"
+        shell: pwsh
+
+      - name: Debug - Check CC in bash
+        run: |
+          echo "=== bash environment (after bash starts) ==="
+          echo "CC in bash: $CC"
+          echo "CXX in bash: $CXX"
+          echo "LD in bash: $LD"
+          echo "AR in bash: $AR"
+          echo ""
+          echo "=== All environment variables containing 'CC' ==="
+          env | grep -i "^CC" || echo "No CC-related variables found"
+          echo ""
+          echo "=== All environment variables containing compiler/linker names ==="
+          env | grep -iE "^(CC|CXX|LD|AR|GCC|CLANG)=" || echo "No compiler/linker variables found"
+        shell: bash
 
       - name: Build with make
         run: make
