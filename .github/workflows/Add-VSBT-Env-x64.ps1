@@ -80,12 +80,9 @@ function Get-ShortPath {
     }
 }
 
-#$clExePathShort = Get-ShortPath $clExePath
-#$linkExePathShort = Get-ShortPath $linkExePath
-#$libExePathShort = Get-ShortPath $libExePath
-$clExePathShort = $clExePath
-$linkExePathShort = $linkExePath
-$libExePathShort = $libExePath
+$clExePathShort = Get-ShortPath $clExePath
+$linkExePathShort = Get-ShortPath $linkExePath
+$libExePathShort = Get-ShortPath $libExePath
 
 Add-Content -Path $env:GITHUB_ENV -Value "CC=$clExePathShort"
 Add-Content -Path $env:GITHUB_ENV -Value "CXX=$clExePathShort"
