@@ -67,22 +67,29 @@ jobs:
 
       - name: Debug PATH and link command
         run: |
-          echo "=== Current PATH in bash ==="
-          echo "$PATH" | tr ':' '\n' | head -20
-          echo ""
-          echo "=== Which link ==="
-          which -a link || echo "link command not found via which"
-          echo ""
-          echo "=== Checking for link.exe ==="
-          which -a link.exe || echo "link.exe not found via which"
-          echo ""
-          echo "=== MSVC bin directory contents ==="
-          ls -la "/c/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/" | grep -E "(link|cl)\.exe"
-        shell: bash
+          Write-Host "=== Current PATH in PowerShell ==="
+          $env:PATH -split ';' | Select-Object -First 10 | ForEach-Object { Write-Host "  $_" }
+          Write-Host ""
+          Write-Host "=== Checking for link.exe ==="
+          $linkCmd = Get-Command link.exe -ErrorAction SilentlyContinue
+          if ($linkCmd) {
+              Write-Host "link.exe found at: $($linkCmd.Source)"
+          } else {
+              Write-Host "ERROR: link.exe not found in PATH"
+          }
+          Write-Host ""
+          Write-Host "=== Checking for cl.exe ==="
+          $clCmd = Get-Command cl.exe -ErrorAction SilentlyContinue
+          if ($clCmd) {
+              Write-Host "cl.exe found at: $($clCmd.Source)"
+          } else {
+              Write-Host "ERROR: cl.exe not found in PATH"
+          }
+        shell: pwsh
 
       - name: Build with make
         run: make
-        shell: bash
+        shell: pwsh
 
       - name: Run testmain.exe
         run: |
