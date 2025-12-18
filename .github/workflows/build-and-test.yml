@@ -34,32 +34,6 @@ jobs:
           }
         shell: pwsh
 
-      - name: Debug - Verify CC environment variable in bash (before Setup MSVC environment)
-        run: |
-          echo "=== Hypothesis: bash sets CC=cc automatically ==="
-          echo ""
-          echo "--- PowerShell environment (before bash) ---"
-          Write-Host "CC in PowerShell: $env:CC"
-          Write-Host "CXX in PowerShell: $env:CXX"
-          Write-Host "LD in PowerShell: $env:LD"
-          Write-Host "AR in PowerShell: $env:AR"
-        shell: pwsh
-
-      - name: Debug - Check CC in bash (before Setup MSVC environment)
-        run: |
-          echo "=== bash environment (after bash starts) ==="
-          echo "CC in bash: $CC"
-          echo "CXX in bash: $CXX"
-          echo "LD in bash: $LD"
-          echo "AR in bash: $AR"
-          echo ""
-          echo "=== All environment variables containing 'CC' ==="
-          env | grep -i "^CC" || echo "No CC-related variables found"
-          echo ""
-          echo "=== All environment variables containing compiler/linker names ==="
-          env | grep -iE "^(CC|CXX|LD|AR|GCC|CLANG)=" || echo "No compiler/linker variables found"
-        shell: bash
-
       - name: Setup MSVC environment
         run: |
           Write-Host "Setting up MSVC environment..."
@@ -73,22 +47,6 @@ jobs:
           Write-Host "WindowsSDKVersion: $env:WindowsSDKVersion"
           Write-Host "VCToolsInstallDir: $env:VCToolsInstallDir"
           Write-Host ""
-          Write-Host "=== Makefile Tool Variables ==="
-          Write-Host "CC: $env:CC"
-          Write-Host "CXX: $env:CXX"
-          Write-Host "LD: $env:LD"
-          Write-Host "AR: $env:AR"
-          Write-Host ""
-          Write-Host "=== Checking cl.exe ==="
-          $clPath = (Get-Command cl.exe).Source
-          Write-Host "cl.exe path: $clPath"
-          cl.exe 2>&1 | Select-Object -First 5
-          Write-Host ""
-          Write-Host "=== Checking make ==="
-          $makePath = (Get-Command make.exe).Source
-          Write-Host "make.exe path: $makePath"
-          make --version
-          Write-Host ""
           Write-Host "=== Checking OpenCppCoverage ==="
           $ocpPath = (Get-Command OpenCppCoverage.exe).Source
           Write-Host "OpenCppCoverage.exe path: $ocpPath"
@@ -97,49 +55,8 @@ jobs:
           $LASTEXITCODE = 0  # exit code をリセット (--help は exit code 1 を返す)
         shell: pwsh
 
-      - name: Debug - Verify CC environment variable in bash
-        run: |
-          echo "=== Hypothesis: bash sets CC=cc automatically ==="
-          echo ""
-          echo "--- PowerShell environment (before bash) ---"
-          Write-Host "CC in PowerShell: $env:CC"
-          Write-Host "CXX in PowerShell: $env:CXX"
-          Write-Host "LD in PowerShell: $env:LD"
-          Write-Host "AR in PowerShell: $env:AR"
-        shell: pwsh
-
-      - name: Debug - Check CC in bash
-        run: |
-          echo "=== bash environment (after bash starts) ==="
-          echo "CC in bash: $CC"
-          echo "CXX in bash: $CXX"
-          echo "LD in bash: $LD"
-          echo "AR in bash: $AR"
-          echo ""
-          echo "=== All environment variables containing 'CC' ==="
-          env | grep -i "^CC" || echo "No CC-related variables found"
-          echo ""
-          echo "=== All environment variables containing compiler/linker names ==="
-          env | grep -iE "^(CC|CXX|LD|AR|GCC|CLANG)=" || echo "No compiler/linker variables found"
-        shell: bash
-
       - name: Build with make
-        run: |
-          # Windows パスを Git Bash 形式に変換
-          # cygpath コマンドで Windows パス (C:\...) を Unix 形式 (/c/...) に変換
-          #export CC=$(cygpath -u "$CC")
-          #export CXX=$(cygpath -u "$CXX")
-          #export LD=$(cygpath -u "$LD")
-          #export AR=$(cygpath -u "$AR")
-
-          #echo "=== Converted environment variables to Git Bash format ==="
-          #echo "CC=$CC"
-          #echo "CXX=$CXX"
-          #echo "LD=$LD"
-          #echo "AR=$AR"
-          #echo ""
-
-          make
+        run: make
         shell: pwsh
 
       - name: Run testmain.exe
