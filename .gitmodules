@@ -1,3 +1,6 @@
 [submodule "makefw"]
 	path = makefw
 	url = https://github.com/Hondarer/make-framework.git
+[submodule "testfw"]
+	path = testfw
+	url = https://github.com/Hondarer/googletest-c-framework.git

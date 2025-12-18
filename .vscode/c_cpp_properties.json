@@ -3,6 +3,8 @@
         {
             "name": "Linux",
             "includePath": [
+                "${workspaceFolder}/testfw/include",
+                "${workspaceFolder}/testfw/gtest/include"
             ],
             "defines": [
                 "_DEFAULT_SOURCE" // __USE_MISC を有効にしてインテリセンスを効かせるため
@@ -15,6 +17,8 @@
         {
             "name": "Win32",
             "includePath": [
+                "${workspaceFolder}/testfw/include",
+                "${workspaceFolder}/testfw/gtest/include"
             ],
             "defines": [
                 // 安全のため、_CRT_SECURE_NO_WARNINGS は指定しない
