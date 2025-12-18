@@ -34,6 +34,9 @@ jobs:
           }
         shell: pwsh
 
+      - name: Install ReportGenerator
+        run: dotnet tool install --global dotnet-reportgenerator-globaltool
+
       - name: Setup MSVC environment
         run: |
           Write-Host "Setting up MSVC environment..."
@@ -99,4 +102,8 @@ jobs:
               Write-Host "ERROR: testmain.exe not found at $testmainPath"
               exit 1
           }
+        shell: pwsh
+
+      - name: Test
+        run: make test
         shell: pwsh
