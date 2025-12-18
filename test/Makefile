@@ -8,6 +8,9 @@ default : $(SUBDIRS)
 .PHONY: clean
 clean : $(SUBDIRS)
 
+.PHONY: test
+test : $(SUBDIRS)
+
 .PHONY: $(SUBDIRS)
 $(SUBDIRS) :
 	@if [ -f $@/Makefile ]; then \
