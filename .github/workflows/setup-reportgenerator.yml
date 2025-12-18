@@ -1,0 +1,87 @@
+name: Setup ReportGenerator
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  setup-reportgenerator:
+    runs-on: windows-2025
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Install ReportGenerator
+        run: dotnet tool install --global dotnet-reportgenerator-globaltool
+
+      - name: Verify ReportGenerator installation
+        run: |
+          Write-Host "ReportGenerator version:"
+          reportgenerator -version
+
+          Write-Host "`nReportGenerator help:"
+          reportgenerator -help
+
+      - name: Test ReportGenerator with sample data
+        run: |
+          # サンプルディレクトリの作成
+          New-Item -ItemType Directory -Force -Path TestResults
+          New-Item -ItemType Directory -Force -Path CoverageReport
+
+          # ダミーの Cobertura カバレッジファイルを作成 (テスト用)
+          $sampleCoverage = @'
+          <?xml version="1.0" encoding="utf-8"?>
+          <coverage line-rate="0.85" branch-rate="0.75" version="1.9" timestamp="1234567890">
+            <sources>
+              <source>D:\a\diag-win-actions\diag-win-actions</source>
+            </sources>
+            <packages>
+              <package name="SampleProject" line-rate="0.85" branch-rate="0.75" complexity="10">
+                <classes>
+                  <class name="SampleClass" filename="SampleClass.cs" line-rate="0.85" branch-rate="0.75" complexity="5">
+                    <methods>
+                      <method name="SampleMethod" signature="()V" line-rate="1.0" branch-rate="1.0">
+                        <lines>
+                          <line number="10" hits="1" branch="false"/>
+                          <line number="11" hits="1" branch="false"/>
+                        </lines>
+                      </method>
+                    </methods>
+                    <lines>
+                      <line number="10" hits="1" branch="false"/>
+                      <line number="11" hits="1" branch="false"/>
+                    </lines>
+                  </class>
+                </classes>
+              </package>
+            </packages>
+          </coverage>
+          '@
+
+          Set-Content -Path "TestResults\coverage.cobertura.xml" -Value $sampleCoverage
+
+          Write-Host "Sample coverage file created"
+
+          # ReportGenerator を実行
+          reportgenerator `
+            -reports:"TestResults\coverage.cobertura.xml" `
+            -targetdir:"CoverageReport" `
+            -reporttypes:"Html;Badges;Cobertura"
+
+          Write-Host "`nGenerated report files:"
+          Get-ChildItem -Path CoverageReport -Recurse | Select-Object FullName
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: CoverageReport/

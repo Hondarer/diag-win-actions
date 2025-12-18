@@ -43,6 +43,37 @@ Windows Runner の環境調査用ワークフローです。以下の情報を�
 - main ブランチへの pull request
 - 手動実行 (workflow_dispatch)
 
+### setup-reportgenerator.yml
+
+ReportGenerator のセットアップと動作確認用ワークフローです。以下の処理を実行します:
+
+1. .NET SDK のセットアップ
+2. ReportGenerator を .NET グローバルツールとしてインストール
+3. バージョン確認とヘルプ表示
+4. サンプルの Cobertura カバレッジファイルを使用したレポート生成テスト
+5. 生成されたレポートを artifacts としてアップロード
+
+ReportGenerator のインストール方法:
+
+```powershell
+dotnet tool install --global dotnet-reportgenerator-globaltool
+```
+
+使用例:
+
+```powershell
+reportgenerator `
+  -reports:"TestResults\coverage.cobertura.xml" `
+  -targetdir:"CoverageReport" `
+  -reporttypes:"Html;Badges;Cobertura"
+```
+
+実行タイミング:
+
+- main ブランチへの push
+- main ブランチへの pull request
+- 手動実行 (workflow_dispatch)
+
 ## GitHub Actions Windows Runner 環境調査結果
 
 > **調査日**: 2025-12-16 (Run ID: 20249876191, 52309684289)
@@ -214,6 +245,14 @@ Windows Runner 環境診断ワークフローに以下の修正を実施しま�
 
 ## 作業履歴
 
+### 2025-12-19
+
+1. **ReportGenerator セットアップ**
+   - GitHub Actions で ReportGenerator を使用するためのセットアップワークフローを作成
+   - .NET グローバルツールとしてインストール
+   - サンプルカバレッジデータでレポート生成をテスト
+   - 生成されたレポートを artifacts としてアップロード
+
 ### 2025-12-16
 
 1. **初回環境調査** (Run ID: 20249876191)
@@ -242,6 +281,7 @@ Windows Runner 環境診断ワークフローに以下の修正を実施しま�
 - `.github/workflows/Add-VSBT-Env-x64.ps1`: GitHub Actions で MSVC 環境を設定
 - `.github/workflows/test-vsbt-setup.yml`: VSBT スクリプトのテストワークフロー
 - `.github/workflows/env-diagnostics.yml`: 環境診断ワークフロー (VSBT 統合済み)
+- `.github/workflows/setup-reportgenerator.yml`: ReportGenerator セットアップと動作確認ワークフロー
 
 ### 次のステップ
 

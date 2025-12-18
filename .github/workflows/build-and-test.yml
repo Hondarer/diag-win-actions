@@ -59,7 +59,7 @@ jobs:
         run: make
         shell: pwsh
 
-      - name: Run testmain.exe
+      - name: Run prod/testmain.exe
         run: |
           Write-Host "`n=== Running prod/testmain.exe ==="
           $testmainPath = "prod\testmain\testmain.exe"
@@ -80,7 +80,7 @@ jobs:
           }
         shell: pwsh
 
-      - name: Run testmain.exe
+      - name: Run test/testmain.exe
         run: |
           Write-Host "`n=== Running test/testmain.exe ==="
           $testmainPath = "test\testmain\testmain.exe"
