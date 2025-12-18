@@ -84,15 +84,15 @@ $clExePathShort = Get-ShortPath $clExePath
 $linkExePathShort = Get-ShortPath $linkExePath
 $libExePathShort = Get-ShortPath $libExePath
 
-Add-Content -Path $env:GITHUB_ENV -Value "CC=$clExePathShort"
-Add-Content -Path $env:GITHUB_ENV -Value "CXX=$clExePathShort"
-Add-Content -Path $env:GITHUB_ENV -Value "LD=$linkExePathShort"
-Add-Content -Path $env:GITHUB_ENV -Value "AR=$libExePathShort"
-
-Write-Host "MSVC tool environment variables set (8.3 short paths for bash compatibility):"
-Write-Host "  CC=$clExePathShort"
-Write-Host "  CXX=$clExePathShort"
-Write-Host "  LD=$linkExePathShort"
-Write-Host "  AR=$libExePathShort"
+#Add-Content -Path $env:GITHUB_ENV -Value "CC=$clExePathShort"
+#Add-Content -Path $env:GITHUB_ENV -Value "CXX=$clExePathShort"
+#Add-Content -Path $env:GITHUB_ENV -Value "LD=$linkExePathShort"
+#Add-Content -Path $env:GITHUB_ENV -Value "AR=$libExePathShort"
+#
+#Write-Host "MSVC tool environment variables set (8.3 short paths for bash compatibility):"
+#Write-Host "  CC=$clExePathShort"
+#Write-Host "  CXX=$clExePathShort"
+#Write-Host "  LD=$linkExePathShort"
+#Write-Host "  AR=$libExePathShort"
 
 Write-Host "VSBT environment setup completed."
