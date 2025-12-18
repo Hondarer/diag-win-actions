@@ -61,8 +61,29 @@ jobs:
 
       - name: Run testmain.exe
         run: |
-          Write-Host "`n=== Running testmain.exe ==="
+          Write-Host "`n=== Running prod/testmain.exe ==="
           $testmainPath = "prod\testmain\testmain.exe"
+
+          if (Test-Path $testmainPath) {
+              Write-Host "Executing $testmainPath..."
+              & $testmainPath
+
+              if ($LASTEXITCODE -eq 0) {
+                  Write-Host "`ntest main execution completed successfully (exit code: 0)"
+              } else {
+                  Write-Host "`nERROR: testmain.exe failed with exit code: $LASTEXITCODE"
+                  exit $LASTEXITCODE
+              }
+          } else {
+              Write-Host "ERROR: testmain.exe not found at $testmainPath"
+              exit 1
+          }
+        shell: pwsh
+
+      - name: Run testmain.exe
+        run: |
+          Write-Host "`n=== Running test/testmain.exe ==="
+          $testmainPath = "test\testmain\testmain.exe"
 
           if (Test-Path $testmainPath) {
               Write-Host "Executing $testmainPath..."
