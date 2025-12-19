@@ -50,20 +50,20 @@ jobs:
       - name: Run prod/prodmain
         run: |
           Write-Host "`n=== Running prod/prodmain ==="
-          $testmainPath = "prod\prodmain\prodmain.exe"
+          $prodmainPath = "prod\prodmain\prodmain.exe"
 
-          if (Test-Path $testmainPath) {
-              Write-Host "Executing $testmainPath..."
-              & $testmainPath
+          if (Test-Path $prodmainPath) {
+              Write-Host "Executing $prodmainPath..."
+              & $prodmainPath
 
               if ($LASTEXITCODE -eq 0) {
-                  Write-Host "`ntest main execution completed successfully (exit code: 0)"
+                  Write-Host "`nprodmain.exe execution completed successfully (exit code: 0)"
               } else {
-                  Write-Host "`nERROR: testmain.exe failed with exit code: $LASTEXITCODE"
+                  Write-Host "`nERROR: prodmain.exe failed with exit code: $LASTEXITCODE"
                   exit $LASTEXITCODE
               }
           } else {
-              Write-Host "ERROR: testmain.exe not found at $testmainPath"
+              Write-Host "ERROR: prodmain.exe not found at $prodmainPath"
               exit 1
           }
         shell: pwsh
