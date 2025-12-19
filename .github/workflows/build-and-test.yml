@@ -47,10 +47,10 @@ jobs:
         run: make
         shell: pwsh
 
-      - name: Run prod/testmain.exe
+      - name: Run prod/prodmain
         run: |
-          Write-Host "`n=== Running prod/testmain.exe ==="
-          $testmainPath = "prod\testmain\testmain.exe"
+          Write-Host "`n=== Running prod/prodmain ==="
+          $testmainPath = "prod\prodmain\prodmain.exe"
 
           if (Test-Path $testmainPath) {
               Write-Host "Executing $testmainPath..."
