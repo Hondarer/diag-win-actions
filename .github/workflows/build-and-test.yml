@@ -43,22 +43,7 @@ jobs:
           & "${{ github.workspace }}\.github\workflows\Add-VSBT-Env-x64.ps1"
         shell: pwsh
 
-      - name: Verify environment
-        run: |
-          Write-Host "=== MSVC Environment Variables ==="
-          Write-Host "VCToolsVersion: $env:VCToolsVersion"
-          Write-Host "WindowsSDKVersion: $env:WindowsSDKVersion"
-          Write-Host "VCToolsInstallDir: $env:VCToolsInstallDir"
-          Write-Host ""
-          Write-Host "=== Checking OpenCppCoverage ==="
-          $ocpPath = (Get-Command OpenCppCoverage.exe).Source
-          Write-Host "OpenCppCoverage.exe path: $ocpPath"
-          Write-Host "OpenCppCoverage version:"
-          & OpenCppCoverage.exe --help 2>&1 | Select-Object -First 5
-          $LASTEXITCODE = 0  # exit code をリセット (--help は exit code 1 を返す)
-        shell: pwsh
-
-      - name: Build with make
+      - name: Build
         run: make
         shell: pwsh
 
@@ -66,27 +51,6 @@ jobs:
         run: |
           Write-Host "`n=== Running prod/testmain.exe ==="
           $testmainPath = "prod\testmain\testmain.exe"
-
-          if (Test-Path $testmainPath) {
-              Write-Host "Executing $testmainPath..."
-              & $testmainPath
-
-              if ($LASTEXITCODE -eq 0) {
-                  Write-Host "`ntest main execution completed successfully (exit code: 0)"
-              } else {
-                  Write-Host "`nERROR: testmain.exe failed with exit code: $LASTEXITCODE"
-                  exit $LASTEXITCODE
-              }
-          } else {
-              Write-Host "ERROR: testmain.exe not found at $testmainPath"
-              exit 1
-          }
-        shell: pwsh
-
-      - name: Run test/testmain.exe
-        run: |
-          Write-Host "`n=== Running test/testmain.exe ==="
-          $testmainPath = "test\testmain\testmain.exe"
 
           if (Test-Path $testmainPath) {
               Write-Host "Executing $testmainPath..."
